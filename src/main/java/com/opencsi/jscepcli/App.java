@@ -1,16 +1,17 @@
 package com.opencsi.jscepcli;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.net.URL;
-import java.security.KeyPair;
-import java.security.Security;
+import java.nio.file.Files;
+import java.security.*;
 import java.security.cert.CertStore;
 import java.security.cert.Certificate;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.RSAPrivateKeySpec;
+import java.security.spec.RSAPublicKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Collection;
 import java.util.Iterator;
 
@@ -18,6 +19,12 @@ import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.UnsupportedCallbackException;
 
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.crypto.params.RSAKeyParameters;
+import org.bouncycastle.crypto.util.PublicKeyFactory;
+import org.bouncycastle.openssl.PEMKeyPair;
+import org.bouncycastle.openssl.PEMParser;
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.jscep.client.CertificateVerificationCallback;
@@ -32,6 +39,7 @@ import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.apache.log4j.varia.NullAppender;
+import sun.misc.BASE64Decoder;
 
 /**
  * @author asyd
@@ -54,17 +62,59 @@ public class App {
 
         KeyManager km = new KeyManager();
         CertUtil certutil = new CertUtil();
+        KeyPair kp;
+        PKCS10CertificationRequest request;
+        String dn;
 
         if (params.getVerbose()) {
-            System.err.println("Generating RSA key...");
+            System.err.println("Generating/Loading RSA key...");
         }
-        KeyPair kp = km.createRSA(params.getKeySize());
 
-        X509Certificate cert = certutil.createSelfSignedCertificate(kp, params.getDn());
+        if ((params.getExistingKeyFile()!=null) && (params.getExistingCsrFile()!=null)) {
+            File file;
+            byte[] decoded;
 
-        PKCS10CertificationRequest request = certutil.createCertificationRequest(kp,
-                params.getDn(),
-                params.getChallenge());
+            // Read CSR
+            file = new File(params.getExistingCsrFile());
+            decoded = CertUtil.parseDERfromPEM(
+                    Files.readAllBytes(file.toPath()),
+                    Constants.csrBegin,
+                    Constants.csrEnd
+            );
+            request = new PKCS10CertificationRequest(decoded);
+
+            dn = request.getSubject().toString();
+
+            // Read private key
+            file = new File(params.getExistingKeyFile());
+            decoded = CertUtil.parseDERfromPEM(
+                    Files.readAllBytes(file.toPath()),
+                    Constants.privateKeyBegin,
+                    Constants.privateKeyEnd
+            );
+
+            PKCS8EncodedKeySpec pkcs8EncodedKeySpec = new PKCS8EncodedKeySpec(decoded);
+            SubjectPublicKeyInfo pkInfo = request.getSubjectPublicKeyInfo();
+            RSAKeyParameters rsa = (RSAKeyParameters) PublicKeyFactory.createKey(pkInfo);
+            RSAPublicKeySpec rsaSpec = new RSAPublicKeySpec(rsa.getModulus(), rsa.getExponent());
+            KeyFactory kf = KeyFactory.getInstance("RSA");
+            PublicKey rsaPub = kf.generatePublic(rsaSpec);
+            PrivateKey privateKey = kf.generatePrivate(pkcs8EncodedKeySpec);
+            kp = new KeyPair(rsaPub, privateKey);
+
+        } else if ((params.getExistingKeyFile()!=null) || (params.getExistingCsrFile()!=null)) {
+            throw new Exception("existingKeyFile and existingCsrFile needs to be defined both or none of them");
+
+        } else {
+            kp = km.createRSA(params.getKeySize());
+
+            dn = params.getDn();
+            request = certutil.createCertificationRequest(kp,
+                    dn,
+                    params.getChallenge());
+        }
+
+        X509Certificate cert = certutil.createSelfSignedCertificate(kp, dn);
 
         CallbackHandler handler = new ConsoleCallbackHandler();
         URL serverURL = new URL(params.getUrl());
@@ -286,4 +336,5 @@ public class App {
             }
         }
     }
+
 }

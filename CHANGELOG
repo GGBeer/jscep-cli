@@ -9,3 +9,5 @@ Changelog
 * Replaced deprecated Bouncy Castle classes
 * signature algorithm default to SHA256
 * examples/full-test creates a certificate from a remote EJBCA server and tests result with openssl
+* Implemented csr/key import from files
+

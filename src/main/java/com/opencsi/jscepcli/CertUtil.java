@@ -9,6 +9,9 @@ import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 import javax.security.auth.x500.X500Principal;
+import javax.xml.bind.DatatypeConverter;
+
+import com.sun.xml.internal.bind.v2.runtime.reflect.opt.Const;
 import org.bouncycastle.asn1.DERPrintableString;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
@@ -43,7 +46,7 @@ class CertUtil {
                 kp.getPublic()
         );
 
-        ContentSigner contentSigner = new JcaContentSignerBuilder("SHA256withRSA").build(kp.getPrivate());
+        ContentSigner contentSigner = new JcaContentSignerBuilder(Constants.algorithm).build(kp.getPrivate());
 
         return new JcaX509CertificateConverter()
                 .setProvider(
@@ -61,7 +64,7 @@ class CertUtil {
             DERPrintableString passwordDer = new DERPrintableString(password);
             builder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_challengePassword, passwordDer);
 
-            JcaContentSignerBuilder signerBuilder = new JcaContentSignerBuilder("SHA1withRSA");
+            JcaContentSignerBuilder signerBuilder = new JcaContentSignerBuilder(Constants.algorithm);
             request = builder.build(signerBuilder.build(kp.getPrivate()));
         } catch (Exception e) {
             System.err.println("Exception:" + e);
@@ -71,6 +74,19 @@ class CertUtil {
 
     private X500Principal parseDN(String dn) {
         return new X500Principal(dn);
+    }
+
+
+    public static byte[] parseDERfromPEM(byte[] pem, String beginDelimiter, String endDelimiter)
+            throws ArrayIndexOutOfBoundsException, NullPointerException {
+        String data = new String(pem);
+        String[] tokens = data.split(beginDelimiter);
+        try {
+            tokens = tokens[1].split(endDelimiter);
+            return DatatypeConverter.parseBase64Binary(tokens[0]);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            return pem;
+        }
     }
 
 }
