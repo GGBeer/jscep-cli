@@ -3,3 +3,6 @@ target
 nbactions.xml
 *.iml
 .idea/*
+examples/ca.crt
+examples/client.*
+examples/crl.pem
