@@ -9,49 +9,51 @@ import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 import javax.security.auth.x500.X500Principal;
-import org.bouncycastle.asn1.ASN1Set;
-import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERPrintableString;
-import org.bouncycastle.asn1.DERSet;
-import org.bouncycastle.asn1.pkcs.Attribute;
-import org.bouncycastle.asn1.pkcs.CertificationRequest;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.cert.X509v3CertificateBuilder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
-import org.bouncycastle.x509.X509V3CertificateGenerator;
+
 
 /**
  *
  * @author asyd
  */
-public class CertUtil {
+class CertUtil {
 
     /*
      * @description This method create a self signed certificated
      */
-    public X509Certificate createSelfSignedCertificate(KeyPair kp, String dn) throws Exception {
+    X509Certificate createSelfSignedCertificate(KeyPair kp, String dn) throws Exception {
         Date now = new Date();
         BigInteger serial = new BigInteger("1");
 
-        X500Principal principal = new X500Principal(dn);
+        X509v3CertificateBuilder certificateBuilder = new JcaX509v3CertificateBuilder(
+                parseDN(dn),
+                serial,
+                now,
+                now,
+                parseDN(dn),
+                kp.getPublic()
+        );
 
-        X509V3CertificateGenerator certGen = new X509V3CertificateGenerator();
+        ContentSigner contentSigner = new JcaContentSignerBuilder("SHA256withRSA").build(kp.getPrivate());
 
-        certGen.setIssuerDN(principal);
-        certGen.setSubjectDN(principal);
-        certGen.setSerialNumber(serial);
-        certGen.setNotBefore(now);
-        certGen.setNotAfter(now);
-        certGen.setPublicKey(kp.getPublic());
-        certGen.setSignatureAlgorithm("SHA1withRSA");
-
-
-        return certGen.generate(kp.getPrivate(), "BC");
+        return new JcaX509CertificateConverter()
+                .setProvider(
+                        BouncyCastleProvider.PROVIDER_NAME).
+                        getCertificate(certificateBuilder.build(contentSigner)
+                );
     }
 
-    public PKCS10CertificationRequest createCertificationRequest(KeyPair kp, String dn, String password) {
+
+    PKCS10CertificationRequest createCertificationRequest(KeyPair kp, String dn, String password) {
         PKCS10CertificationRequest request = null;
 
         try {
@@ -61,21 +63,13 @@ public class CertUtil {
 
             JcaContentSignerBuilder signerBuilder = new JcaContentSignerBuilder("SHA1withRSA");
             request = builder.build(signerBuilder.build(kp.getPrivate()));
-/*
-            request = new PKCS10CertificationRequest("SHA1withRSA",
-                    parseDN(dn),
-                    kp.getPublic(),
-                    attributes,
-                    kp.getPrivate());
-*/
-
         } catch (Exception e) {
             System.err.println("Exception:" + e);
         }
         return request;
     }
 
-    public X500Principal parseDN(String dn) {
+    private X500Principal parseDN(String dn) {
         return new X500Principal(dn);
     }
 

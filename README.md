@@ -1,9 +1,10 @@
 # Build
 
 ```bash
-$ git clone git://github.com/asyd/jscep-cli-jdk6.git
-$ cd jscep-cli-jdk6
-$ mvn assembly:assembly
+$ https://github.com/ip6li/jscep-cli.git
+$ cd jscep-cli
+$ mvn package
+$ java -jar target/jscepcli-1.2-jar-with-dependencies.jar
 ```
 
 # Usage
@@ -13,7 +14,7 @@ $ java -jar target/jscepcli-1.0-SNAPSHOT-exe.jar
 Usage: <main class> [options]
   Options:
         --algorithm             BouncyCastle signature algorithm to use
-                                Default: SHA1
+                                Default: SHA256
         --ca-certificate-file   CACert output file
                                 Default: cacert.pem
         --ca-identifier         CA identifier (try AdminCA1 if using a default

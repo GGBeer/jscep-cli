@@ -19,7 +19,7 @@ public class AppParameters {
     private Integer keySize = 2048;
 
     @Parameter(names = "--algorithm", description = "BouncyCastle signature algorithm to use")
-    private String algorithm = "SHA1";
+    private String algorithm = "SHA256";
 
     @Parameter(names = "--challenge", description = "Challenge password (EJBCA entity password)", required=true )
     private String challenge;

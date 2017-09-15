@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+CA="ca.crt"
+
+java -jar ../target/jscepcli-1.2-jar-with-dependencies.jar \
+    --algorithm SHA256 \
+    --ca-certificate-file ${CA} \
+    --ca-identifier DemoCA \
+    --certificate-file client.crt \
+    --challenge foo123 \
+    --crl-file crl.pem \
+    --csr-file client.csr \
+    --dn "CN=vpnclient" \
+    --key-file client.key \
+    --keySize 2048 \
+    --text \
+    --url http://ejbca.felsing.net/pkiclient.exe \
+    --verbose \
+
+rm -f ${CA}
+curl -o "${CA}" 'https://ejbca.felsing.net/publicweb/webdist/certdist;jsessionid=Ule_4A8aV-hAs-BNrBQDXe7Essv8-YFSItMHUMY-.ejbca?cmd=cachain&caid=1779024279&format=pem'
+
+openssl verify -CAfile ca.crt client.crt
+

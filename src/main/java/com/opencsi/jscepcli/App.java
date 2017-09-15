@@ -18,14 +18,12 @@ import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.UnsupportedCallbackException;
 
-import org.bouncycastle.asn1.pkcs.CertificationRequest;
+import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
-import org.bouncycastle.openssl.PEMWriter;
 import org.jscep.client.CertificateVerificationCallback;
 import org.jscep.client.Client;
 import org.jscep.client.EnrollmentResponse;
 import org.jscep.transaction.OperationFailureException;
-import org.jscep.transaction.Transaction;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
@@ -36,30 +34,28 @@ import org.apache.log4j.PatternLayout;
 import org.apache.log4j.varia.NullAppender;
 
 /**
- *
  * @author asyd
  */
 public class App {
 
-    AppParameters params;
+    private AppParameters params;
 //    KeyPair kp;
 //    CertUtil certutil;
 
-    public void setParams(AppParameters params) {
+    private void setParams(AppParameters params) {
         this.params = params;
     }
 
-    public App() {
+    private App() {
     }
 
-    public void scepCLI() throws Exception {
+    private void scepCLI() throws Exception {
         Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
 
         KeyManager km = new KeyManager();
         CertUtil certutil = new CertUtil();
 
-        if(params.getVerbose())
-        {
+        if (params.getVerbose()) {
             System.err.println("Generating RSA key...");
         }
         KeyPair kp = km.createRSA(params.getKeySize());
@@ -67,8 +63,8 @@ public class App {
         X509Certificate cert = certutil.createSelfSignedCertificate(kp, params.getDn());
 
         PKCS10CertificationRequest request = certutil.createCertificationRequest(kp,
-                                                                                 params.getDn(),
-                                                                                 params.getChallenge());
+                params.getDn(),
+                params.getChallenge());
 
         CallbackHandler handler = new ConsoleCallbackHandler();
         URL serverURL = new URL(params.getUrl());
@@ -79,49 +75,43 @@ public class App {
             if (params.getCsrFile() != null) {
                 saveToPEM(params.getCsrFile(), request);
             }
-            if(params.getText()) {
+            if (params.getText()) {
                 printPEM("PKCS#10 signing request", request);
             }
 
             Client client = new Client(serverURL, handler);
 
             CertStore caCertificateStore = client.getCaCertificate(params.getCaIdentifier());
-            Collection <? extends Certificate> caCertificates = caCertificateStore.getCertificates(null);
-            Iterator <? extends Certificate> caCertificatesIterator = caCertificates.iterator();
+            Collection<? extends Certificate> caCertificates = caCertificateStore.getCertificates(null);
+            Iterator<? extends Certificate> caCertificatesIterator = caCertificates.iterator();
             int caCertificateNum = 0;
 
-            if(caCertificates.size() == 0)
-            {
+            if (caCertificates.size() == 0) {
                 System.err.println("No CA certificates.");
-            }
-            else
-            {
+            } else {
                 System.out.println("Received " + caCertificates.size() + " CA certificate(s).");
             }
 
-            while(caCertificatesIterator.hasNext())
-            {
+            while (caCertificatesIterator.hasNext()) {
                 Certificate c = caCertificatesIterator.next();
-                if(params.getCaCertificateFile() != null)
-                {
+                if (params.getCaCertificateFile() != null) {
                     saveToPEM(params.getCaCertificateFile(), c);
                 }
-                if(params.getText()) {
+                if (params.getText()) {
                     caCertificateNum++;
                     printPEM("CA Certificate " + caCertificateNum, c);
                 }
             }
 
 
-            if(params.getVerbose())
-            {
+            if (params.getVerbose()) {
                 System.err.println("Starting enrollment request...");
             }
 
             EnrollmentResponse response = client.enrol(cert,
-                                                       kp.getPrivate(),
-                                                       request,
-                                                       params.getCaIdentifier());
+                    kp.getPrivate(),
+                    request,
+                    params.getCaIdentifier());
 
             /*
              * handle asynchronous response
@@ -129,27 +119,27 @@ public class App {
             while (response.isPending()) {
                 seconds++;
                 System.out.println("Enrollment request returned CERT_REQ_PENDING; polling... " +
-                                   "(waited " + seconds + "s)");
-                Thread.currentThread().sleep(1000);
+                        "(waited " + seconds + "s)");
+                Thread.sleep(1000);
 
                 response = client.poll(cert, kp.getPrivate(),
-                                       cert.getSubjectX500Principal(),
-                                       response.getTransactionId(),
-                                       params.getCaIdentifier());
+                        cert.getSubjectX500Principal(),
+                        response.getTransactionId(),
+                        params.getCaIdentifier());
             }
 
             if (response.isSuccess()) {
-                if(params.getVerbose()) {
+                if (params.getVerbose()) {
                     System.err.println("Enrollment request successful!");
                 }
 
                 X509Certificate clientCertificate = null;
                 int certNum = 0;
 
-                if(params.getKeyFile() != null) {
+                if (params.getKeyFile() != null) {
                     saveToPEM(params.getKeyFile(), kp.getPrivate());
                 }
-                if(params.getText()) {
+                if (params.getText()) {
                     printPEM("RSA Private Key", kp.getPrivate());
                 }
 
@@ -158,53 +148,47 @@ public class App {
 
                 System.out.println("Received response containing " + certs.size() + " certificate(s).");
 
-                Iterator it = certs.iterator();
-                while (it.hasNext()) {
-                    X509Certificate certificate = (X509Certificate) it.next();
+                for (Object c : certs) {
+                    X509Certificate certificate = (X509Certificate) c;
 
                     certNum++;
-                    if(params.getText())
-                    {
+                    if (params.getText()) {
                         printPEM("Certificate " + certNum, certificate);
                     }
 
                     /* Not an intermediate CA certificate */
                     clientCertificate = certificate;
-                    if(params.getCertificateFile() != null) {
+                    if (params.getCertificateFile() != null) {
                         saveToPEM(params.getCertificateFile(), certificate);
                     }
                 }
                 System.out.println("Certificate issued");
 
-                if(params.getText() || params.getCrlFile() != null)
-                {
+                if (params.getText() || params.getCrlFile() != null) {
                     X509CRL crl;
 
                     try {
+                        assert (clientCertificate!=null);
                         crl = client.getRevocationList(clientCertificate,
-                                                       kp.getPrivate(),
-                                                       clientCertificate.getIssuerX500Principal(),
-                                                       clientCertificate.getSerialNumber(),
-                                                       params.getCaIdentifier());
+                                kp.getPrivate(),
+                                clientCertificate.getIssuerX500Principal(),
+                                clientCertificate.getSerialNumber(),
+                                params.getCaIdentifier());
 
                         saveToPEM(params.getCrlFile(), crl);
 
-                        if(params.getText() && crl != null) {
+                        if (params.getText() && crl != null) {
                             printPEM("Certificate Revocation List", crl);
                         }
 
-                    }
-                    catch(OperationFailureException ofe)
-                    {
+                    } catch (OperationFailureException ofe) {
                         System.err.println("Could not retrieve CRL.");
-                        if(params.getVerbose()) {
+                        if (params.getVerbose()) {
                             ofe.printStackTrace();
                         }
                     }
-                }
-                else
-                {
-                    if(params.getVerbose()) {
+                } else {
+                    if (params.getVerbose()) {
                         System.err.println("Skipping CRL output (neither a file nor --text was specified)");
                     }
                 }
@@ -213,7 +197,7 @@ public class App {
                 System.err.println("Failure response: " + response.getFailInfo());
             }
         } catch (IOException e) {
-            if(params.getVerbose()) {
+            if (params.getVerbose()) {
                 e.printStackTrace();
             }
 
@@ -227,25 +211,25 @@ public class App {
             }
 
         } catch (Exception e) {
-            System.out.println(e);
-            if(params.getVerbose()) {
+            System.out.println(e.getMessage());
+            if (params.getVerbose()) {
                 e.printStackTrace();
             }
         }
     }
 
-    public void saveToPEM(String filename, Object data) {
-        if(filename == null) {
+    private void saveToPEM(String filename, Object data) {
+        if (filename == null) {
             return;
         }
 
         try {
-            PEMWriter writer = new PEMWriter(new FileWriter(new File(filename), true));
+            JcaPEMWriter writer = new JcaPEMWriter(new FileWriter(new File(filename), true));
             writer.writeObject(data);
             writer.close();
 
         } catch (IOException e) {
-            if(params.getVerbose()) {
+            if (params.getVerbose()) {
                 e.printStackTrace();
             }
             System.err.println("Could not save file: " + filename);
@@ -253,9 +237,9 @@ public class App {
         }
     }
 
-    public void printPEM(String title, Object data) throws IOException {
+    private void printPEM(String title, Object data) throws IOException {
         System.out.println(title + ":");
-        PEMWriter writer = new PEMWriter(new OutputStreamWriter(System.out));
+        JcaPEMWriter writer = new JcaPEMWriter(new OutputStreamWriter(System.out));
         writer.writeObject(data);
         writer.flush();
         System.out.println();
@@ -275,9 +259,9 @@ public class App {
             app.setParams(params);
 
             Logger root = Logger.getRootLogger();
-            if(params.getVerbose()) {
+            if (params.getVerbose()) {
                 root.addAppender(new ConsoleAppender(
-                    new PatternLayout(PatternLayout.TTCC_CONVERSION_PATTERN)));
+                        new PatternLayout(PatternLayout.TTCC_CONVERSION_PATTERN)));
             } else {
                 root.addAppender(new NullAppender());
             }
@@ -292,12 +276,12 @@ public class App {
 
         @Override
         public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
-            for (int i = 0; i < callbacks.length; i++) {
-                if (callbacks[i] instanceof CertificateVerificationCallback) {
-                    CertificateVerificationCallback callback = (CertificateVerificationCallback) callbacks[i];
+            for (Callback cb : callbacks) {
+                if (cb instanceof CertificateVerificationCallback) {
+                    CertificateVerificationCallback callback = (CertificateVerificationCallback) cb;
                     callback.setVerified(true);
                 } else {
-                    throw new UnsupportedCallbackException(callbacks[i]);
+                    throw new UnsupportedCallbackException(cb);
                 }
             }
         }

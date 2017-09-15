@@ -11,19 +11,19 @@ import java.security.KeyPairGenerator;
  *
  * @author asyd
  */
-public class KeyManager {
+class KeyManager {
 
-    public KeyPair createRSA(Integer keySize) {
+    KeyPair createRSA(Integer keySize) {
         KeyPairGenerator kpg;
         KeyPair kp = null;
         
         try {
             kpg = KeyPairGenerator.getInstance("RSA");
-            kpg.initialize(keySize.intValue());
+            kpg.initialize(keySize);
             kp = kpg.genKeyPair();
             
         } catch (Exception e) {
-            
+            // ignore
         }
 
         return kp;

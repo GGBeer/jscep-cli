@@ -1,0 +1,11 @@
+Changelog
+=========
+
+2017-09-15
+==========
+
+* Fork from https://github.com/asyd/jscep-cli-jdk6
+* Updated Maven dependencies to recent versions
+* Replaced deprecated Bouncy Castle classes
+* signature algorithm default to SHA256
+* examples/full-test creates a certificate from a remote EJBCA server and tests result with openssl
