@@ -3,6 +3,7 @@
 ```bash
 $ https://github.com/ip6li/jscep-cli.git
 $ cd jscep-cli
+$ mvn compile
 $ mvn package
 $ java -jar target/jscepcli-1.2-jar-with-dependencies.jar
 ```

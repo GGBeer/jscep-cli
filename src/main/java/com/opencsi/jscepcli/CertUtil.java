@@ -65,7 +65,7 @@ class CertUtil {
                 DERPrintableString passwordDer = new DERPrintableString(password);
                 builder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_challengePassword, passwordDer);
             }
-            
+
             JcaContentSignerBuilder signerBuilder = new JcaContentSignerBuilder(Constants.algorithm);
             request = builder.build(signerBuilder.build(kp.getPrivate()));
         } catch (Exception e) {
