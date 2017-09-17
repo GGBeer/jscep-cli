@@ -1,5 +1,10 @@
 Changelog
 =========
+2017-09-17
+==========
+
+* Support for pre created CSR (e.g. with OpenSSL)
+* Updates pre created CSR with challenge password if set with --challenge
 
 2017-09-15
 ==========

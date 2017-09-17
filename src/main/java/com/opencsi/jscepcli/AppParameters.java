@@ -30,7 +30,7 @@ public class AppParameters {
     @Parameter(names = "--challenge", description = "Challenge password (EJBCA entity password)", required=false )
     private String challenge;
 
-    @Parameter(names = "--url", description = "SCEP URL. For EJBCA, use http://<hostname>:<port>/ejbca/publicweb/apply/scep/pkiclient.exe", required=true)
+    @Parameter(names = "--url", description = "SCEP URL. For EJBCA, use https://<hostname>:<port>/ejbca/publicweb/apply/scep/pkiclient.exe", required=true)
     private String url;
 
     @Parameter(names = "--certificate-file", description = "Certificate output file")
