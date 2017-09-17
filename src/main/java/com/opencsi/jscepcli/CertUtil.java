@@ -11,8 +11,8 @@ import java.util.Date;
 import javax.security.auth.x500.X500Principal;
 import javax.xml.bind.DatatypeConverter;
 
-import com.sun.xml.internal.bind.v2.runtime.reflect.opt.Const;
 import org.bouncycastle.asn1.DERPrintableString;
+import org.bouncycastle.asn1.pkcs.Attribute;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
@@ -25,7 +25,6 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
 
 /**
- *
  * @author asyd
  */
 class CertUtil {
@@ -52,32 +51,63 @@ class CertUtil {
                 .setProvider(
                         BouncyCastleProvider.PROVIDER_NAME).
                         getCertificate(certificateBuilder.build(contentSigner)
-                );
+                        );
     }
 
 
     PKCS10CertificationRequest createCertificationRequest(KeyPair kp, String dn, String password) {
-        PKCS10CertificationRequest request = null;
+        PKCS10CertificationRequest request;
 
         try {
             JcaPKCS10CertificationRequestBuilder builder = new JcaPKCS10CertificationRequestBuilder(new X500Principal(dn), kp.getPublic());
-            DERPrintableString passwordDer = new DERPrintableString(password);
-            builder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_challengePassword, passwordDer);
+
+            if (password!=null) {
+                DERPrintableString passwordDer = new DERPrintableString(password);
+                builder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_challengePassword, passwordDer);
+            }
+            
+            JcaContentSignerBuilder signerBuilder = new JcaContentSignerBuilder(Constants.algorithm);
+            request = builder.build(signerBuilder.build(kp.getPrivate()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+        return request;
+    }
+
+
+    PKCS10CertificationRequest createCertificationRequest(KeyPair kp, PKCS10CertificationRequest request, String password) {
+        try {
+            JcaPKCS10CertificationRequestBuilder builder = new JcaPKCS10CertificationRequestBuilder(
+                    request.getSubject(), kp.getPublic()
+            );
+
+            Attribute[] csrAttributes = request.getAttributes();
+            for (Attribute a : csrAttributes) {
+                builder.addAttribute(a.getAttrType(), a.getAttributeValues());
+            }
+
+            if (password != null) {
+                DERPrintableString passwordDer = new DERPrintableString(password);
+                builder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_challengePassword, passwordDer);
+            }
 
             JcaContentSignerBuilder signerBuilder = new JcaContentSignerBuilder(Constants.algorithm);
             request = builder.build(signerBuilder.build(kp.getPrivate()));
         } catch (Exception e) {
-            System.err.println("Exception:" + e);
+            e.printStackTrace();
+            return null;
         }
         return request;
     }
+
 
     private X500Principal parseDN(String dn) {
         return new X500Principal(dn);
     }
 
 
-    public static byte[] parseDERfromPEM(byte[] pem, String beginDelimiter, String endDelimiter)
+    static byte[] parseDERfromPEM(byte[] pem, String beginDelimiter, String endDelimiter)
             throws ArrayIndexOutOfBoundsException, NullPointerException {
         String data = new String(pem);
         String[] tokens = data.split(beginDelimiter);

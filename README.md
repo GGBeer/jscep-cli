@@ -52,6 +52,3 @@ Usage: <main class> [options]
       Verbose output
       Default: false
 ```
-
-if using --existingCsrFile CSR must include challenge password matching password assigned from PKI.
-

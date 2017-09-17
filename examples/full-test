@@ -14,7 +14,7 @@ java -jar ../target/jscepcli-1.2-jar-with-dependencies.jar \
     --key-file client.key \
     --keySize 2048 \
     --text \
-    --url http://ejbca.felsing.net/pkiclient.exe \
+    --url https://ejbca.felsing.net/pkiclient.exe \
     --verbose \
 
 rm -f ${CA}

@@ -9,9 +9,7 @@ import java.security.cert.Certificate;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.RSAPrivateKeySpec;
 import java.security.spec.RSAPublicKeySpec;
-import java.security.spec.X509EncodedKeySpec;
 import java.util.Collection;
 import java.util.Iterator;
 
@@ -22,9 +20,6 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
-import org.bouncycastle.openssl.PEMKeyPair;
-import org.bouncycastle.openssl.PEMParser;
-import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.jscep.client.CertificateVerificationCallback;
@@ -39,7 +34,7 @@ import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.apache.log4j.varia.NullAppender;
-import sun.misc.BASE64Decoder;
+
 
 /**
  * @author asyd
@@ -72,35 +67,35 @@ public class App {
 
         if ((params.getExistingKeyFile()!=null) && (params.getExistingCsrFile()!=null)) {
             File file;
-            byte[] decoded;
-
-            // Read CSR
-            file = new File(params.getExistingCsrFile());
-            decoded = CertUtil.parseDERfromPEM(
-                    Files.readAllBytes(file.toPath()),
-                    Constants.csrBegin,
-                    Constants.csrEnd
-            );
-            request = new PKCS10CertificationRequest(decoded);
-
-            dn = request.getSubject().toString();
 
             // Read private key
             file = new File(params.getExistingKeyFile());
-            decoded = CertUtil.parseDERfromPEM(
+            byte[] decodedPrivateKey = CertUtil.parseDERfromPEM(
                     Files.readAllBytes(file.toPath()),
                     Constants.privateKeyBegin,
                     Constants.privateKeyEnd
             );
 
-            PKCS8EncodedKeySpec pkcs8EncodedKeySpec = new PKCS8EncodedKeySpec(decoded);
-            SubjectPublicKeyInfo pkInfo = request.getSubjectPublicKeyInfo();
+            // Read CSR
+            file = new File(params.getExistingCsrFile());
+            byte[] decodedCsr = CertUtil.parseDERfromPEM(
+                    Files.readAllBytes(file.toPath()),
+                    Constants.csrBegin,
+                    Constants.csrEnd
+            );
+
+            PKCS10CertificationRequest pkcs10CertificationRequest = new PKCS10CertificationRequest(decodedCsr);
+            PKCS8EncodedKeySpec pkcs8EncodedKeySpec = new PKCS8EncodedKeySpec(decodedPrivateKey);
+            SubjectPublicKeyInfo pkInfo = pkcs10CertificationRequest.getSubjectPublicKeyInfo();
             RSAKeyParameters rsa = (RSAKeyParameters) PublicKeyFactory.createKey(pkInfo);
             RSAPublicKeySpec rsaSpec = new RSAPublicKeySpec(rsa.getModulus(), rsa.getExponent());
             KeyFactory kf = KeyFactory.getInstance("RSA");
             PublicKey rsaPub = kf.generatePublic(rsaSpec);
             PrivateKey privateKey = kf.generatePrivate(pkcs8EncodedKeySpec);
             kp = new KeyPair(rsaPub, privateKey);
+
+            request = certutil.createCertificationRequest(kp, pkcs10CertificationRequest, params.getChallenge());
+            dn = request.getSubject().toString();
 
         } else if ((params.getExistingKeyFile()!=null) || (params.getExistingCsrFile()!=null)) {
             throw new Exception("existingKeyFile and existingCsrFile needs to be defined both or none of them");
