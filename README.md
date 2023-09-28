@@ -1,7 +1,7 @@
 # Build
 
 ```bash
-$ https://github.com/ip6li/jscep-cli.git
+$ git clone git://github.com/asyd/jscep-cli-jdk6.git
 $ cd jscep-cli
 $ mvn compile
 $ mvn package
@@ -11,6 +11,7 @@ $ java -jar target/jscepcli-1.2-jar-with-dependencies.jar
 # Usage
 
 ```bash
+$ java -jar target/jscepcli-1.3-SNAPSHOT-jar-with-dependencies.jar
 Usage: <main class> [options]
   Options:
     --algorithm
