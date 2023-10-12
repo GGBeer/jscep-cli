@@ -15,42 +15,59 @@ $ java -jar target/jscepcli-1.3-SNAPSHOT-jar-with-dependencies.jar
 Usage: <main class> [options]
   Options:
     --algorithm
-      BouncyCastle signature algorithm to use
-      Default: SHA256
-    --ca-certificate-file
-      CACert output file
+      Signature algorithm to use (e.g. SHA256withRSA)
+      Default: SHA256withRSA
+    --ca-certificate-output-file
+      CA certificate output file
       Default: cacert.pem
     --ca-identifier
-      CA identifier (try AdminCA1 if using a default EJBCA install)
-    --certificate-file
-      Certificate output file
-      Default: cert.pem
+      SCEP CA identifier (Note: The CA/RA may enforce restrictions/syntax to this identifier)
+    --cert-input-file
+      Pre created Certificate file for PKCSReq protection, instead of using a new generated self-signed
+    --cert-key-input-file
+      Private key file for PKCSReq protection, instead of using the CSR key (PEM format, requires matching --cert-input-file) 
     --challenge
-      Challenge password (EJBCA entity password)
-    --crl-file
+      Challenge password (entity password)
+    --crl-output-file
       CRL output file
       Default: crl.pem
-    --csr-file
+    --csr-input-file
+      Pre created CSR file (PEM format, requires matching --key-input-file)
+    --csr-output-file
       CSR output file
+      Default: csr.pem
     --dn
       Subject DN to request
-    --existingCsrFile
-      Pre created CSR file (PEM format), requires --existingKeyFile
-    --existingKeyFile
-      Pre created key file (PEM format), requires --existingCsrFile
-    --key-file
-      Private key output file
+    --ee-certificate-output-file
+      EE certificate output file
+      Default: cert.pem
+    --fqdn
+      Add SAN-FQDN to request
+    --ipv4
+      Add SAN-IPv4-Address to request
+    --ipv6
+      Add SAN-IPv6-Address to request
+    --mail
+      Add SAN-Email to request
+    --key-input-file
+      Pre created key file (PEM format) to be used for current CSR
+    --key-output-file
+      CSR Private key output file
       Default: privkey.pem
-    --keySize
-      Size of key, if you want more than 2048, you need the JCE
+    --keysize
+      Size of RSA key e.g. 1024, 2048, 3072, 4096, 8192 bits
       Default: 2048
-    -t, --text
-      Output PEM-format objects on stdout. (similar to 'openssl <cmd> -text')
-      Default: false
+    --polling-period
+      Seconds to wait for next polling
+      Default: 5
+    --polling-retries
+      Maximum number of polling retries
+      Default: 0
+    --proxy
+      HTTP-Proxy, use <hostname>:<port>
+    --ra-certificate-output-file
+      RA certificate output file
+      Default: racert.pem
   * --url
-      SCEP URL. For EJBCA, use 
-      http://<hostname>:<port>/ejbca/publicweb/apply/scep/pkiclient.exe 
-    -v, --verbose
-      Verbose output
-      Default: false
+      SCEP URL. For example, http://<hostname>:<port>/caservices/scep/pkiclient.exe
 ```

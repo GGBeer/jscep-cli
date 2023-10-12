@@ -5,174 +5,275 @@
 package com.opencsi.jscepcli;
 
 import com.beust.jcommander.Parameter;
+import com.beust.jcommander.validators.PositiveInteger;
 
 /**
- *
  * @author asyd
  */
 public class AppParameters {
 
-    @Parameter(names = "--dn", description = "Subject DN to request", required = false)
-    private String dn;
-
-    @Parameter(names = "--existingKeyFile", description = "Pre created key file (PEM format), requires --existingCsrFile")
-    private String existingKeyFile = null;
-
-    @Parameter(names = "--existingCsrFile", description = "Pre created CSR file (PEM format), requires --existingKeyFile")
-    private String existingCsrFile = null;
-
-    @Parameter(names = "--keySize", description = "Size of key, if you want more than 2048, you need the JCE")
+    @Parameter(names = "--keysize", description = "Size of RSA key e.g. 1024, 2048, 3072, 4096, 8192 bits")
     private Integer keySize = 2048;
+    @Parameter(names = "--algorithm", description = "Signature algorithm to use (e.g. SHA256withRSA)")
+    private String sigAlgorithm = "SHA256withRSA";
 
-    @Parameter(names = "--algorithm", description = "BouncyCastle signature algorithm to use")
-    private String algorithm = "SHA256";
+    @Parameter(names = "--dn", description = "Subject DN to request")
+    private String dn = null;
+    @Parameter(names = "--ipv4", description = "Add SAN-IPv4-Address to request")
+    private String ipv4 = null;
+    @Parameter(names = "--ipv6", description = "Add SAN-IPv6-Address to request")
+    private String ipv6 = null;
+    @Parameter(names = "--fqdn", description = "Add SAN-FQDN to request")
+    private String fqdn = null;
+    @Parameter(names = "--mail", description = "Add SAN-Email to request")
+    private String email = null;
+    @Parameter(names = "--challenge", description = "Challenge password (entity password)")
+    private String challenge = null;
 
-    @Parameter(names = "--challenge", description = "Challenge password (EJBCA entity password)")
-    private String challenge;
+    @Parameter(names = "--ca-identifier", description = "SCEP CA identifier (Note: The CA/RA may enforce restrictions/syntax to this identifier)")
+    private String caIdentifier = null;
 
-    @Parameter(names = "--url", description = "SCEP URL. For EJBCA, use https://<hostname>:<port>/ejbca/publicweb/apply/scep/pkiclient.exe", required=true)
-    private String url;
+    @Parameter(names = "--url", description = "SCEP URL. For example, http://<hostname>:<port>/caservices/scep/pkiclient.exe", required = true)
+    private String url = null;
+    @Parameter(names = "--proxy", description = "HTTP-Proxy, use <hostname>:<port>")
+    private String proxy = null;
+    @Parameter(names = "--polling-period", description = "Seconds to wait for next polling", validateWith = {PositiveInteger.class})
+    private Integer pollingPeriod = 5;
+    @Parameter(names = "--polling-retries", description = "Maximum number of polling retries", validateWith = {PositiveInteger.class})
+    private Integer pollingRetries = 0;
 
-    @Parameter(names = "--certificate-file", description = "Certificate output file")
-    private String certificateFile = "cert.pem";
+    @Parameter(names = "--key-input-file", description = "Pre created key file (PEM format) to be used for current CSR")
+    private String keyInputFile = null;
+    @Parameter(names = "--csr-input-file", description = "Pre created CSR file (PEM format, requires matching --key-input-file)")
+    private String csrInputFile = null;
+    @Parameter(names = "--cert-input-file", description = "Pre created Certificate file for PKCSReq protection, instead of using a new generated self-signed")
+    private String certInputFile = null;
+    @Parameter(names = "--cert-key-input-file", description = "Private key file for PKCSReq protection, instead of using the CSR key (PEM format, requires matching --cert-input-file)")
+    private String certKeyInputFile = null;
 
-    @Parameter(names = "--ca-certificate-file", description = "CACert output file")
-    private String caCertificateFile = "cacert.pem";
-
-    @Parameter(names = "--csr-file", description = "CSR output file")
-    private String csrFile;
-
-    @Parameter(names = "--key-file", description = "Private key output file")
-    private String keyFile = "privkey.pem";
-
-    @Parameter(names = "--key-input-file", description = "Private key input file for PKCSReq protedtion, instead of using a generated")
-    private String keyInputFile;
-
-    @Parameter(names = "--cert-input-file", description = "Certificate input file for PKCSReq protedtion, instead of using a generated self-signed")
-    private String certInputFile;
-
-    @Parameter(names = "--ca-identifier", description = "CA identifier (try AdminCA1 if using a default EJBCA install)")
-    private String caIdentifier = null; // "AdminCA1";
-
-    @Parameter(names = "--crl-file", description = "CRL output file")
-    private String crlFile = "crl.pem";
-
-    @Parameter(names = { "-v", "--verbose"}, description = "Verbose output")
-    private boolean verbose = false;
-
-    @Parameter(names = { "-t", "--text"}, description = "Output PEM-format objects on stdout. (similar to 'openssl <cmd> -text')")
-    private boolean text = false;
+    @Parameter(names = "--key-output-file", description = "CSR Private key output file")
+    private String keyOutputFile = "privkey.pem";
+    @Parameter(names = "--csr-output-file", description = "CSR output file")
+    private String csrOutputFile = "csr.pem";
+    @Parameter(names = "--ee-certificate-output-file", description = "EE certificate output file")
+    private String eeCertificateOutputFile = "cert.pem";
+    @Parameter(names = "--ca-certificate-output-file", description = "CA certificate output file")
+    private String caCertificateOutputFile = "cacert.pem";
+    @Parameter(names = "--ra-certificate-output-file", description = "RA certificate output file")
+    private String raCertificateOutputFile = "racert.pem";
+    @Parameter(names = "--crl-output-file", description = "CRL output file")
+    private String crlOutputFile = "crl.pem";
 
     /**
-     * @return the dn
-     */
-    public String getDn() {
-        return dn;
-    }
-
-    /**
-     * @return the keySize
+     *
+     * @return KeySize
      */
     public Integer getKeySize() {
         return keySize;
     }
 
     /**
-     * @return the algorithm
+     *
+     * @return SigAlgorithm
      */
-    public String getAlgorithm() {
-        return algorithm;
+    public String getSigAlgorithm() {
+        return sigAlgorithm;
     }
 
     /**
-     * @return the challenge
+     *
+     * @return DN
+     */
+    public String getDn() {
+        return dn;
+    }
+
+    /**
+     *
+     * @return IPv4
+     */
+    public String getIpv4() {
+        return ipv4;
+    }
+
+    /**
+     *
+     * @return IPv6
+     */
+    public String getIpv6() {
+        return ipv6;
+    }
+
+    /**
+     *
+     * @return FQDN
+     */
+    public String getFqdn() {
+        return fqdn;
+    }
+
+    /**
+     *
+     * @return Email
+     */
+    public String getEmail() {
+        return email;
+    }
+
+    /**
+     *
+     * @return Challenge
      */
     public String getChallenge() {
         return challenge;
     }
 
     /**
-     * @return the url
-     */
-    public String getUrl() {
-        return url;
-    }
-
-    /**
-     * @return the certificateFile
-     */
-    public String getCertificateFile() {
-        return certificateFile;
-    }
-
-    /**
-     * @return the caCertificateFile
-     */
-    public String getCaCertificateFile() {
-        return caCertificateFile;
-    }
-
-    /**
-     * @return the csrFile
-     */
-    public String getCsrFile() {
-        return csrFile;
-    }
-
-    /**
-     * @return the keyFile
-     */
-    public String getKeyFile() {
-        return keyFile;
-    }
-
-    /**
-     * @return the keyInputFile
-     */
-    public String getKeyInputFile() {
-        return keyInputFile;
-    }
-
-    /**
-     * @return the certInputFile
-     */
-    public String getCertInputFile() {
-        return certInputFile;
-    }
-
-    /**
-     * @return the caIdentiifier
+     *
+     * @return CaIdentifier
      */
     public String getCaIdentifier() {
         return caIdentifier;
     }
 
     /**
-     * @return the crlFile
+     *
+     * @return URL
      */
-    public String getCrlFile() {
-        return crlFile;
+    public String getUrl() {
+        return url;
     }
 
     /**
-     * @return true if we are in verbose mode
+     *
+     * @return Proxy
      */
-    public boolean getVerbose() {
-        return verbose;
+    public String getProxy() {
+        return proxy;
     }
 
     /**
-     * @return true if we should output PEM text
+     *
+     * @return PollingPeriod
      */
-    public boolean getText() {
-        return text;
+    public Integer getPollingPeriod() {
+        return pollingPeriod;
     }
 
-    public String getExistingKeyFile() {
-        return existingKeyFile;
+    /**
+     *
+     * @return PollingRetries
+     */
+    public Integer getPollingRetries() {
+        return pollingRetries;
     }
 
-    public String getExistingCsrFile() {
-        return existingCsrFile;
+    /**
+     *
+     * @return KeyInputFile
+     */
+    public String getKeyInputFile() {
+        return keyInputFile;
+    }
+
+    /**
+     *
+     * @return CsrInputFile
+     */
+    public String getCsrInputFile() {
+        return csrInputFile;
+    }
+
+    /**
+     *
+     * @return CertInputFile
+     */
+    public String getCertInputFile() {
+        return certInputFile;
+    }
+
+    /**
+     *
+     * @return CertKeyInputFile
+     */
+    public String getCertKeyInputFile() {
+        return certKeyInputFile;
+    }
+
+    /**
+     *
+     * @return KeyOutputFile
+     */
+    public String getKeyOutputFile() {
+        return keyOutputFile;
+    }
+
+    /**
+     *
+     * @return CsrOutputFile
+     */
+    public String getCsrOutputFile() {
+        return csrOutputFile;
+    }
+
+    /**
+     *
+     * @return EeCertificateOutputFile
+     */
+    public String getEeCertificateOutputFile() {
+        return eeCertificateOutputFile;
+    }
+
+    /**
+     *
+     * @return CaCertificateOutputFile
+     */
+    public String getCaCertificateOutputFile() {
+        return caCertificateOutputFile;
+    }
+
+    /**
+     *
+     * @return RaCertificateOutputFile
+     */
+    public String getRaCertificateOutputFile() {
+        return raCertificateOutputFile;
+    }
+
+    /**
+     *
+     * @return CrlOutputFile
+     */
+    public String getCrlOutputFile() {
+        return crlOutputFile;
+    }
+
+    @Override
+    public String toString() {
+        return "AppParameters{" +
+                "keySize=" + keySize +
+                ", sigAlgorithm='" + sigAlgorithm + '\'' +
+                ", dn='" + dn + '\'' +
+                ", ipv4='" + ipv4 + '\'' +
+                ", ipv6='" + ipv6 + '\'' +
+                ", fqdn='" + fqdn + '\'' +
+                ", email='" + email + '\'' +
+                ", challenge='" + challenge + '\'' +
+                ", caIdentifier='" + caIdentifier + '\'' +
+                ", url='" + url + '\'' +
+                ", proxy='" + proxy + '\'' +
+                ", pollingPeriod=" + pollingPeriod +
+                ", pollingRetries=" + pollingRetries +
+                ", keyInputFile='" + keyInputFile + '\'' +
+                ", csrInputFile='" + csrInputFile + '\'' +
+                ", certInputFile='" + certInputFile + '\'' +
+                ", certKeyInputFile='" + certKeyInputFile + '\'' +
+                ", keyOutputFile='" + keyOutputFile + '\'' +
+                ", csrOutputFile='" + csrOutputFile + '\'' +
+                ", eeCertificateOutputFile='" + eeCertificateOutputFile + '\'' +
+                ", caCertificateOutputFile='" + caCertificateOutputFile + '\'' +
+                ", raCertificateOutputFile='" + raCertificateOutputFile + '\'' +
+                ", crlOutputFile='" + crlOutputFile + '\'' +
+                '}';
     }
 }
